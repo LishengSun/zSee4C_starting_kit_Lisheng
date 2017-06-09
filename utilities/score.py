@@ -115,7 +115,7 @@ if __name__=="__main__":
     max_steps = len(steps)-1
     assert np.all(steps==range(max_steps+1))
     
-    #max_steps = 1
+    # max_steps = 1
     
     # Compute predictions (except on the last file)
     start_time = time()         # <== Mark starting time
@@ -145,12 +145,11 @@ if __name__=="__main__":
             if (predict_file == []): raise IOError('Missing prediction file in step {}'.format(step_num))
 
             # Read the solution and prediction values into numpy arrays
-            Dsolution = DataManager(datatype="solution", data_file=solution_file, verbose=verbose, two_d_map=True)
-            # print Dsolution.X.shape
+            Dsolution = DataManager(datatype="solution", data_file=solution_file, verbose=verbose, two_d_map=False)
             # print Dsolution.t.shape
             # print frame_num
-            Dprediction = DataManager(datatype="prediction", data_file=predict_file, verbose=True, two_d_map=False)
-            # print Dprediction.X
+            Dprediction = DataManager(datatype="prediction", data_file=predict_file, verbose=True, two_d_map=False) # already shape(time,44,44)
+            # Dprediction.map_back_to_1d(Dprediction.X)
             
             if Dprediction.X.shape[0] != frame_num: 
                 vprint(verbose, 'WARNING: Wrong number of predicted frames {}'.format(Dprediction.X.shape[0]))
@@ -175,7 +174,7 @@ if __name__=="__main__":
                 raise Exception('Error in calculation of the specific score of the task')
                                     
         except Exception as inst:
-            # print inst
+            print inst
             score = missing_score 
             print("======= Step %d" % step_num + ": score(" + score_name + ")=ERROR =======")
             html_file.write("======= Step %d" % step_num + ": score(" + score_name + ")=ERROR =======\n")            

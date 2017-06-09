@@ -26,6 +26,7 @@ import time
 import h5py
 from data_io import vprint
 import sys
+import traceback
 
 
 class DataManager:
@@ -223,54 +224,62 @@ class DataManager:
             data_dir: data path
         '''
         try:
-            f_0 = h5py.File('./sample_data/train/Xm1/X1.h5','r')#This is the first file and will give the first timestamp t0
-            t_0 = np.array(f_0['X']['value']['t']['value'][:])[0][0]
-        except IOError: # use the first file in /train/Xm1 as starting file
-            f_0 = sorted(os.listdir('./sample_data/train/Xm1/'), key=lambda f:int(f.split('.')[0].split('X')[-1]))[0]
-            t_0 = np.array(f_0['X']['value']['t']['value'][:])[0][0]
-            vprint (self.verbose, "Cannot load sample_data/train/Xm1/X1.h5 to initialize time indexing. Instead use the first file in sample_data/train/Xm1/.")
-
-
-        if not data_file.endswith('.h5'):
-            data_file = data_file + '.h5'
-        f = h5py.File(os.path.join(data_dir, data_file),'r')
-        try:
-            X = np.array(f['X']['value']['X']['value'][:])
-            ### corrected by Lisheng ####
-            # if 't' in f: 
-            #     X = np.array(f['t']['value']['t']['value'][:])
-            if 't' in f['X']['value']:
-                t_absolute = np.array(f['X']['value']['t']['value'][:])
-                # print t_absolute[:,0].tolist()
-                # print t_0
-                # t = [int(float(t_abs-t0)/300) for t_abs in t_absolute.tolist()]
-                t = [(t_abs-t_0)/300 for t_abs in t_absolute[:,0].tolist()]
-                # print t
-                t = np.array(t).reshape(t_absolute.shape)
-
-            ### corrected by Lisheng ####
-            else:
-                t = np.array(range(X.shape[0]))
-
-        except: # Lisheng's simpler format
             try:
-                X = np.array(f['X'][:])
-                if 't' in f: 
-                    t = np.array(f['t'][:])   
+                f_0 = h5py.File('./sample_data/train/Xm1/X1.h5','r')#This is the first file and will give the first timestamp t0
+                t_0 = np.array(f_0['X']['value']['t']['value'][:])[0][0]
+            except: # use the first file in /train/Xm1 as starting file
+                f_0 = sorted(os.listdir('./sample_data/train/Xm1/'), key=lambda f:int(f.split('.')[0].split('X')[-1]))[0]
+                t_0 = np.array(f_0['X']['value']['t']['value'][:])[0][0]
+                vprint (self.verbose, "Cannot load sample_data/train/Xm1/X1.h5 to initialize time indexing. Instead use the first file in sample_data/train/Xm1/.")
+            
+
+
+            if not data_file.endswith('.h5'):
+                data_file = data_file + '.h5'
+            f = h5py.File(os.path.join(data_dir, data_file),'r')
+            try:
+                X = np.array(f['X']['value']['X']['value'][:])
+                
+                ### corrected by Lisheng ####
+                # if 't' in f: 
+                #     X = np.array(f['t']['value']['t']['value'][:])
+                if 't' in f['X']['value']:
+                    t_absolute = np.array(f['X']['value']['t']['value'][:])
+                    # print t_absolute[:,0].tolist()
+                    # print t_0
+                    # t = [int(float(t_abs-t0)/300) for t_abs in t_absolute.tolist()]
+                    t = [(t_abs-t_0)/300 for t_abs in t_absolute[:,0].tolist()]
+                    # print t
+                    t = np.array(t).reshape(t_absolute.shape)
+
+                ### corrected by Lisheng ####
                 else:
-                    t = np.array(range(X.shape[0])) 
-            except:
-                X = np.array([])
-                t = np.array([])  
-        if len(t)==0 or len(t)!=len(X):
-            t = np.array(range(X.shape[0])) 
-        if len(X.shape) > 3: # turn to gray levels
-            X = X[:,:,:,0]
-        if self.two_d_map:
-            # X_1d = np.hstack((X,t))
-            # print X_1d.shape
-            # vprint (self.verbose, 'Mapping X to 2D')
-            X = self.two_d_mapping(X, self.map_file)
+                    t = np.array(range(X.shape[0]))
+                
+            except: # Lisheng's simpler format
+                try:
+                    X = np.array(f['X'][:])
+                    if 't' in f: 
+                        t = np.array(f['t'][:])   
+                    else:
+                        t = np.array(range(X.shape[0])) 
+                except Exception:
+                    vprint(self.verbose, traceback.format_exc())
+                    X = np.array([])
+                    t = np.array([])  
+                
+            if len(t)==0 or len(t)!=len(X):
+                t = np.array(range(X.shape[0])) 
+            if len(X.shape) > 3: # turn to gray levels
+                X = X[:,:,:,0]
+            if self.two_d_map:
+                # X_1d = np.hstack((X,t))
+                # print X_1d.shape
+                # vprint (self.verbose, 'Mapping X to 2D')
+                X = self.two_d_mapping(X)
+        except Exception:
+            print(traceback.format_exc())
+
 
         return (X, t)
         
@@ -286,6 +295,9 @@ class DataManager:
         if not data_file.endswith(format):
             data_file = data_file + '.' + format
         success = True
+        if data_file.startswith('Y'):
+            two_d_map = False
+            self.X = self.map_back_to_1d(self.X)
         try:
             filename = os.path.join(data_dir, data_file)
             vprint(self.verbose, "Data Manager :: ========= Saving data to " + filename)
@@ -314,7 +326,7 @@ class DataManager:
                     with open(filename, 'wb') as f:
                         pickle.dump(self.__dict__, f, 2) 
         except Exception as e: 
-            vprint (e)
+            vprint (self.verbose, e)
             success = False
         end = time.time()
         vprint(self.verbose, "[+] Success in %5.2f sec" % (end - start))
@@ -415,12 +427,12 @@ class DataManager:
         plt.show()
 
 
-    def two_d_mapping(self, X_1d, map_file):
+    def two_d_mapping(self, X_1d):
         """
         map 1-d array to a 2-d space, so that similar 
         """
         try:
-            Midx = np.loadtxt(map_file)
+            Midx = np.loadtxt(self.map_file)
             T = X_1d.shape[0]
             n = Midx.shape[0] #or[1], Midx is square
             X_2d = np.empty((T,n,n))
@@ -429,8 +441,56 @@ class DataManager:
                     X_2d[:,i,j] = X_1d[:, int(Midx[i,j])].reshape((T,))
             return X_2d
 
-        except IOError:
-            vprint (self.verbose, "Error: Cannot load the map.\n Data has not been transformed to 2D array.") 
+        except Exception:
+            vprint(self.verbose, traceback.format_exc())
+            vprint (self.verbose, "Error \n Data has not been transformed to 2D array.") 
             return X_1d
              # retrain the map
+
+    def map_back_to_1d(self, X_2d):
+        try:
+            Midx = np.loadtxt(self.map_file)
+            try:
+                original_Xshape = np.array(h5py.File('./sample_data/train/Xm1/X1.h5','r')['X']['value']['X']['value'][:]).shape
+            except:
+                vprint (self.verbose, "Error: Cannot load ./sample_data/train/Xm1/X1.h5.\n Use the default value (1916, 1) for 1d array") 
+                original_Xshape = (12, 1916, 1)
+            # print original_Xshape
+            # print X_2d.shape
+            T, n, _ = X_2d.shape
+            X_1d = np.empty((T, original_Xshape[1], original_Xshape[2]))
+            T,m,_ = X_1d.shape
+            # print X_1d.shape
+            # print X_2d.shape
+            
+            
+            where = 0
+            while where < m:
+                # for k in range(where, m):
+                # print 'where: ', where
+                for i in range(n):
+                    for j in range(n):
+                        if int(Midx[i,j]) == where:
+                            # print i,j, Midx[i,j]
+                            # print X_1d[:, where].shape
+                            # print X_2d[:,i,j].shape
+                            # print X_2d[:,i,j].reshape(X_1d[:, where].shape).shape
+                            X_1d[:, where]=X_2d[:,i,j].reshape(X_1d[:, where].shape)
+                where += 1
+            # print 'X_1d shape', X_1d.shape
+            return X_1d
+            
+
+        except Exception:
+            vprint(self.verbose, traceback.format_exc())
+            vprint (self.verbose, "Error \n Data has not been transformed back to 1D array.") 
+            return X_2d
+
+
+
+
+
+
+
+
 
