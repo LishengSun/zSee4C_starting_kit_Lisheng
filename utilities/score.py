@@ -101,7 +101,7 @@ if __name__=="__main__":
     sys.path.append(code_dir)
 
     # path.append('/Users/lishengsun/Downloads/zSee4C_starting_kit')
-    from predictSpatioTemporal import predictSpatioTemporal as predict
+    
 
     # Create the output directory, if it does not already exist and open output files  
     score_file = open(os.path.join(output_dir, 'scores.txt'), 'wb')
@@ -116,14 +116,19 @@ if __name__=="__main__":
     assert np.all(steps==range(max_steps+1))
     
     # max_steps = 1
-    
+    # print 'result_dir: ', result_dir
     # Compute predictions (except on the last file)
     start_time = time()         # <== Mark starting time
-    for step_num in range(max_steps):
-        if True: #try:
-            predict(step_num, data_dir, result_dir, code_dir, cache_dir=cache_dir, num_predicted_frames=frame_num)
-        if False: #except:
-            raise Exception('Error in prediction program') 
+    existing_prediction_files = [f for f in os.listdir(result_dir) if f.startswith('Y')]
+    if existing_prediction_files == []:
+        vprint(verbose,  "*****************************Cannot find prediction files in %s*****************************"%result_dir)
+        vprint(verbose,  "*****************************Now computing predictions using predictSpatioTemporal (persistance model)*****************************")
+        from predictSpatioTemporal import predictSpatioTemporal as predict
+        for step_num in range(max_steps):
+            if True: #try:
+                predict(step_num, data_dir, result_dir, code_dir, cache_dir=cache_dir, num_predicted_frames=frame_num)
+            if False: #except:
+                raise Exception('Error in prediction program') 
     time_spent = time() - start_time
     
     # Score results (except on the first file)
