@@ -72,7 +72,7 @@ class DataManager:
         save read data (array X, T) to pickle or h5 file		
     '''
 	
-    def __init__(self, datatype="unknown", data_file="", verbose=False, max_samples=float('inf'), cache_file="", two_d_map=True, map_file='./utilities/Midx_199.txt'):
+    def __init__(self, datatype="unknown", data_file="", verbose=False, max_samples=float('inf'), cache_file="", two_d_map=True, map_file='./utilities/Midx_199_44by44.txt'):
         '''Constructor'''
         self.version = "1"
         self.datatype = datatype 
@@ -127,6 +127,7 @@ class DataManager:
             self.t=np.array([])
             for dir in dir_list:
                 for data_file in sorted([h5file for h5file in os.listdir(os.path.join(data_dir, dir)) if h5file.endswith('h5')],key=lambda i:int(i.split('.')[0].split('X')[-1])):
+                    vprint(self.verbose, "Loading %s"%data_file)
                     self.appendSamples(data_file, os.path.join(data_dir, dir), verbose=False)
                     vid=vid+1
             #self.X = np.reshape(self.X, (-1, self.X[0].shape[-2],self.X[0].shape[-1]))          
@@ -283,7 +284,7 @@ class DataManager:
 
         return (X, t)
         
-    def saveData(self, data_file, data_dir="", frames=[], format='pickle'):
+    def saveData(self, data_file, data_dir="", frames=[], format='pickle', map_predictions_to_1d=True):
         ''' Save data in picke / h5 format.        Parameters: 
             data_file: save data under this filename (no extention)
             data_dir: where to save data
@@ -295,7 +296,7 @@ class DataManager:
         if not data_file.endswith(format):
             data_file = data_file + '.' + format
         success = True
-        if data_file.startswith('Y'):
+        if data_file.startswith('Y') and map_predictions_to_1d:
             two_d_map = False
             self.X = self.map_back_to_1d(self.X)
         try:
@@ -450,6 +451,8 @@ class DataManager:
     def map_back_to_1d(self, X_2d):
         try:
             Midx = np.loadtxt(self.map_file)
+            # print Midx
+            # print Midx.shape
             try:
                 original_Xshape = np.array(h5py.File('./sample_data/train/Xm1/X1.h5','r')['X']['value']['X']['value'][:]).shape
             except:
@@ -462,6 +465,7 @@ class DataManager:
             T,m,_ = X_1d.shape
             # print X_1d.shape
             # print X_2d.shape
+            # print m
             
             
             where = 0
