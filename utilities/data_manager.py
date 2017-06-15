@@ -43,6 +43,9 @@ class DataManager:
         x.__init__([(feature, value)]) -> void		
         Initialize the data members with the tuples (feature, value) given as argument. An unlimited number of tuples can be passed as argument.
         If input_dir is given, calls loadTrainData.
+        Parameters:
+        two_d_map: bool. Maps 1d array data to 2d using a pre-trained SOM (Self Organizing Map) map when True (default).
+        map_file: the SOM map used when two_d_map. default ='./utilities/Midx_199_44by44.txt'
         
     loadTrainData (...)
         x.loadData (input_dir, max_samples=float('inf'), verbose="True") -> success		
@@ -284,7 +287,7 @@ class DataManager:
 
         return (X, t)
         
-    def saveData(self, data_file, data_dir="", frames=[], format='pickle', map_predictions_to_1d=True):
+    def saveData(self, data_file, data_dir="", frames=[], format='pickle', map_to_1d=True, map_to_1d_when_starts_with='Y'):
         ''' Save data in picke / h5 format.        Parameters: 
             data_file: save data under this filename (no extention)
             data_dir: where to save data
@@ -292,11 +295,13 @@ class DataManager:
             e.g. frames=(start_frame, end_frame)=(10,15)
                     default = entire video matrix
             format: 'pickle' or 'h5', default = 'pickle'
+            map_to_1d: bool. True (by default): map the predictions back to 1d when they are saved with a filename starting with the value of parameter 'map_to_1d_when_starts_with'; False: save data as it is.
+            map_to_1d_when_starts_with: str. Indicates the starting part of filename which will get mapped to 1d when map_to_1d=True
         '''
         if not data_file.endswith(format):
             data_file = data_file + '.' + format
         success = True
-        if data_file.startswith('Y') and map_predictions_to_1d:
+        if data_file.startswith(map_to_1d_when_starts_with) and map_to_1d:
             two_d_map = False
             self.X = self.map_back_to_1d(self.X)
         try:
@@ -430,7 +435,7 @@ class DataManager:
 
     def two_d_mapping(self, X_1d):
         """
-        map 1-d array to a 2-d space, so that similar 
+        map 1-d array to a 2-d space with Self Organizing Maps technique. The map used here is defined by self.map_file
         """
         try:
             Midx = np.loadtxt(self.map_file)
@@ -449,6 +454,11 @@ class DataManager:
              # retrain the map
 
     def map_back_to_1d(self, X_2d):
+        """
+        map 2-d array back to 1-d using the same maps for 1-d to 2-d (defined by self.map_file). This is useful when saving predictions
+        for the reason of scoring.
+
+        """
         try:
             Midx = np.loadtxt(self.map_file)
             # print Midx
