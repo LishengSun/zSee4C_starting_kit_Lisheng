@@ -133,7 +133,6 @@ class DataManager:
                     vprint(self.verbose, "Loading %s"%data_file)
                     self.appendSamples(data_file, os.path.join(data_dir, dir), verbose=False)
                     vid=vid+1
-            #self.X = np.reshape(self.X, (-1, self.X[0].shape[-2],self.X[0].shape[-1]))          
                    
         if self.use_pickle and not data_reloaded:
             # Save data as a pickle for "faster" later reload
@@ -145,8 +144,6 @@ class DataManager:
             vprint(self.verbose, "[-] Loading failed")
         else:
             vprint(self.verbose, "[+] Success, loaded %d videos in %5.2f sec" % (vid, end - start))
-            #vprint(self.verbose, self.X.shape)
-            #vprint(self.verbose, self.t.shape)
         return success
 	
 
@@ -170,28 +167,10 @@ class DataManager:
             self.t = t_add
         else:
             self.X = np.vstack((self.X, X_add))
-            # if t_add[0]!=self.t[-1]+1:
-            #     if self.t[-1]>=116 and t_add[8]!=0:
-            #         if len(X_add) == 109: #OK
-            #             vprint(self.verbose and verbose, "Warning, unexpected frame indices, rectifying")
-            #             t_add = np.hstack((np.array(range(8)) + self.t[-1] +1 ,range(101))) 
-            #         elif self.t[-1]>=124 and t_add[0]!=0:
-            #             vprint(self.verbose and verbose, "Warning, unexpected frame indices, reset")
-            #             t_add = np.array(range(len(X_add)))
-            #     else:
-            #         t_add = np.array(range(len(X_add))) + self.t[-1] +1  
-            #         vprint(self.verbose and verbose, "Warning, unexpected frame indices, rectifying")   
-            # print self.t.shape
-            # print t_add.shape
-            # t_add.reshape((self.t[0],))
-            # print t_add.shape
+
             if t_add[0][0] == 0:
                 t_add = np.array([t+1+self.t[-1][0] for t in t_add]).reshape(t_add.shape)
             self.t = np.vstack((self.t, t_add))
-        
-        #print data_file
-        #print self.X.shape
-        #print self.t.shape    
 
         end = time.time()
         if len(self.X)==0:
@@ -228,16 +207,19 @@ class DataManager:
             data_dir: data path
         '''
         try:
-            try:
-                f_0 = h5py.File('./sample_data/train/Xm1/X1.h5','r')#This is the first file and will give the first timestamp t0
-                t_0 = np.array(f_0['X']['value']['t']['value'][:])[0][0]
-            except: # use the first file in /train/Xm1 as starting file
-                f_0 = sorted(os.listdir('./sample_data/train/Xm1/'), key=lambda f:int(f.split('.')[0].split('X')[-1]))[0]
-                t_0 = np.array(f_0['X']['value']['t']['value'][:])[0][0]
-                vprint (self.verbose, "Cannot load sample_data/train/Xm1/X1.h5 to initialize time indexing. Instead use the first file in sample_data/train/Xm1/.")
+            # try:
+            #     f_0 = h5py.File('./sample_data/train/Xm1/X1.h5','r')#This is the first file and will give the first timestamp t0
+            #     print data_dir
+            #     print os.path.join(data_dir,'train/Xm1/X1.h5')
+            #     # f_0 = h5py.File(os.path.join(data_dir,'train/Xm1/X1.h5'),'r')
+            #     t_0 = np.array(f_0['X']['value']['t']['value'][:])[0][0]
+            # except: # use the first file in /train/Xm1 as starting file
+            #     f_0 = sorted(os.listdir('./sample_data/train/Xm1/'), key=lambda f:int(f.split('.')[0].split('X')[-1]))[0]
+            #     t_0 = np.array(f_0['X']['value']['t']['value'][:])[0][0]
+            #     vprint (self.verbose, "Cannot load train/Xm1/X1.h5 to initialize time indexing. Instead use the first file in train/Xm1/.")
             
-
-
+            t_0 = 1246492800.0
+            
             if not data_file.endswith('.h5'):
                 data_file = data_file + '.h5'
             f = h5py.File(os.path.join(data_dir, data_file),'r')
@@ -461,8 +443,6 @@ class DataManager:
         """
         try:
             Midx = np.loadtxt(self.map_file)
-            # print Midx
-            # print Midx.shape
             try:
                 original_Xshape = np.array(h5py.File('./sample_data/train/Xm1/X1.h5','r')['X']['value']['X']['value'][:]).shape
             except:
@@ -473,25 +453,14 @@ class DataManager:
             T, n, _ = X_2d.shape
             X_1d = np.empty((T, original_Xshape[1], original_Xshape[2]))
             T,m,_ = X_1d.shape
-            # print X_1d.shape
-            # print X_2d.shape
-            # print m
-            
             
             where = 0
             while where < m:
-                # for k in range(where, m):
-                # print 'where: ', where
                 for i in range(n):
                     for j in range(n):
                         if int(Midx[i,j]) == where:
-                            # print i,j, Midx[i,j]
-                            # print X_1d[:, where].shape
-                            # print X_2d[:,i,j].shape
-                            # print X_2d[:,i,j].reshape(X_1d[:, where].shape).shape
                             X_1d[:, where]=X_2d[:,i,j].reshape(X_1d[:, where].shape)
                 where += 1
-            # print 'X_1d shape', X_1d.shape
             return X_1d
             
 

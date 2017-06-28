@@ -122,15 +122,15 @@ def zip_submission(archivename, basedir=""):
             for fn in files:
                 if fn[-3:]=='.py':
                     absfn = os.path.join(root, fn)
-                    zfn = absfn[len(code_dir)+len(os.sep):] #XXX: relative path
+                    zfn = absfn#[len(code_dir)+len(os.sep):] #XXX: relative path
                     z.write(absfn, zfn)
 
         for root, dirs, files in os.walk(util_dir):
             #NOTE: ignore empty directories
             for fn in files:
-                if fn[-3:]=='.py':
+                if fn[-3:]=='.py' or fn.startswith('Midx'):
                     absfn = os.path.join(root, fn)
-                    zfn = absfn[len(util_dir)+len(os.sep):] #XXX: relative path
+                    zfn = absfn#[len(util_dir)+len(os.sep):] #XXX: relative path
                     z.write(absfn, zfn)
 
         for root, dirs, files in os.walk(cache_dir):
@@ -140,6 +140,8 @@ def zip_submission(archivename, basedir=""):
                     absfn = os.path.join(root, fn)
                     zfn = absfn[len(cache_dir)+len(os.sep):] #XXX: relative path
                     z.write(absfn, zfn)
+                    
+
                     
 # ================ Display directory structure and code version (for debug purposes) =================
       

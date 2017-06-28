@@ -91,16 +91,9 @@ if __name__=="__main__":
     # Get the prediction program from the user
     # This should be a file called predictSpatioTemporal.py in the res directory
     # res/ should also contain a subdirectory wirh all code dependencies
-    # print path
-    # print os.path.dirname(os.path.abspath(__file__))
-    # print os.getcwd()
-    # os.chdir('/Users/lishengsun/Downloads/zSee4C_starting_kit_Lisheng')
-    # print os.listdir(os.getcwd())
-    # print os.path.abspath(root_dir)
-    # print len(argv)
+    
     sys.path.append(code_dir)
 
-    # path.append('/Users/lishengsun/Downloads/zSee4C_starting_kit')
     
 
     # Create the output directory, if it does not already exist and open output files  
@@ -116,7 +109,7 @@ if __name__=="__main__":
     assert np.all(steps==range(max_steps+1))
     
     # max_steps = 1
-    # print 'result_dir: ', result_dir
+
     # Compute predictions (except on the last file)
     start_time = time()         # <== Mark starting time
     existing_prediction_files = [f for f in os.listdir(result_dir) if f.startswith('Y')]
@@ -151,10 +144,8 @@ if __name__=="__main__":
 
             # Read the solution and prediction values into numpy arrays
             Dsolution = DataManager(datatype="solution", data_file=solution_file, verbose=verbose, two_d_map=False)
-            # print Dsolution.t.shape
-            # print frame_num
+
             Dprediction = DataManager(datatype="prediction", data_file=predict_file, verbose=True, two_d_map=False) # already shape(time,44,44)
-            # Dprediction.map_back_to_1d(Dprediction.X)
             
             if Dprediction.X.shape[0] != frame_num: 
                 vprint(verbose, 'WARNING: Wrong number of predicted frames {}'.format(Dprediction.X.shape[0]))

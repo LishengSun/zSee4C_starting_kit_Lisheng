@@ -125,7 +125,9 @@ def predictSpatioTemporal(step_num, input_dir, output_dir, code_dir, \
     #### START WORKING ####  ####  ####  ####  ####  ####  ####  ####  ####  
     from data_manager import DataManager # load/save data and get info about them
     #**************** CHANGE THIS **************** CHANGE THIS **************** CHANGE THIS **************** 
-    from simple_model import Model              # example model implementing persistence    
+    from simple_model import Model              # example model implementing persistence
+    # from linear_kernels import Model  
+    
     #**************** CHANGE THIS **************** CHANGE THIS **************** CHANGE THIS **************** 
     vprint( verbose,  "************************************************")
     vprint( verbose,  "******** Processing data chunk number " + str(step_num) + " ********")
@@ -136,7 +138,9 @@ def predictSpatioTemporal(step_num, input_dir, output_dir, code_dir, \
         cache_file = os.path.join(cache_dir, "Din.pickle")
     else:
         cache_file = ""
-    Din = DataManager(datatype="input", verbose=verbose, cache_file=cache_file)
+    Din = DataManager(datatype="input", verbose=verbose, cache_file=cache_file, two_d_map=True, map_file='./utilities/Midx_199_44by44.txt')
+    
+
     Dout = DataManager(datatype="output", verbose=verbose)
     M = Model(hyper_param=(AR_order, I_order, MA_order), path=code_dir, verbose=verbose)
     
@@ -145,6 +149,7 @@ def predictSpatioTemporal(step_num, input_dir, output_dir, code_dir, \
         # First time we read the training data.
         train_data_dir = os.path.join(input_dir, "train")
         Din.loadTrainData(train_data_dir, max_samples=max_samples)
+
         # Train the model
         M.train(Din.X, Din.t) # The X matrix is the time series, the T vector are the (optional) time indices
     else:
@@ -157,7 +162,6 @@ def predictSpatioTemporal(step_num, input_dir, output_dir, code_dir, \
     # Read additional frames and append them.
     adapt_data_dir = os.path.join(input_dir, "adapt")
     Din.appendSamples(step_num, adapt_data_dir)
-    
     # Save data for future re-use (we do not forget anything at the moment, 
     # but this may be waistful in time and memory). We especially may not need 
     # the training data.
